@@ -1,0 +1,21 @@
+Brotli==1.0.9
+click==8.0.1
+dash==1.20.0
+dash-core-components==1.16.0
+dash-html-components==1.1.3
+dash-renderer==1.9.1
+dash-table==4.11.3
+Flask==2.0.1
+Flask-Compress==1.9.0
+future==0.18.2
+itsdangerous==2.0.1
+Jinja2==3.0.1
+MarkupSafe==2.0.1
+numpy @ file:///home/mab/.cache/pypoetry/artifacts/e5/2b/79/8d8929de70d07566840629ed43cb77b10f3a6d92dbf14cba0acf61df15/numpy-1.20.3-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl
+pandas @ file:///home/mab/.cache/pypoetry/artifacts/bb/0a/20/3c8badd8a2064706f665e3f8a9f655ce3ce235988963d5ac1fc5690208/pandas-1.2.4-cp39-cp39-manylinux1_x86_64.whl
+plotly==4.14.3
+python-dateutil @ file:///home/mab/.cache/pypoetry/artifacts/93/67/cf/49f56d9e954addcfc50e5ffc9faee013c2eb00c6d77d56c6a22cb33b54/python_dateutil-2.8.1-py2.py3-none-any.whl
+pytz @ file:///home/mab/.cache/pypoetry/artifacts/b0/a7/8d/54de3ab4d1ff29abbbca1e9ccbaefdc2a1b290138311b84f73bee16de1/pytz-2021.1-py2.py3-none-any.whl
+retrying==1.3.3
+six==1.16.0
+Werkzeug==2.0.1
