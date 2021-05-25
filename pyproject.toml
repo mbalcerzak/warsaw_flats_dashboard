@@ -10,6 +10,7 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.9"
+poetry="*"
 dash = "*"
 dash_table = "*"
 dash_core_components = "*"
@@ -17,6 +18,7 @@ dash_html_components = "*"
 pandas = "*"
 plotly = "*"
 gunicorn = "*"
+numpy = "*"
 
 [tool.poetry.dev-dependencies]
 
