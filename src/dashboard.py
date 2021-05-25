@@ -5,16 +5,13 @@ import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
 from dash.dependencies import Output, Input
 import urllib.request as request
 import json
-from collections import Counter
 
 
 def get_json():
     link = "https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/main/json_dir/flats.json"
-
     with request.urlopen(link) as url:
         data = json.loads(url.read().decode())
 
@@ -25,14 +22,18 @@ def get_data():
     return pd.read_csv("dataset.csv")
 
 
-def get_options():
+def get_list(label: str) -> dict:
     data = get_json()
-
+    sorted_list = sorted(data[label].keys())
     options = []
-    for key in data["flats_per_location"].keys():
+    for key in sorted_list:
         options.append({'label': key, 'value': key})
 
-    return options[1:]
+    return options
+
+
+districts = get_list("flats_per_location")
+flat_sizes = get_list("flats_per_area_cat")
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -69,36 +70,21 @@ app.layout = html.Div([
                    'justifyContent': 'center'},
         ),
         html.Div([
-            html.Div([
-                html.Label('Select a city to see home price data'),
-                dcc.Dropdown(
-                    id='city-dropdown',
-                    options=get_options(),
-                    value='Bielany, Warszawa',
-                    multi=False,
-                    clearable=True,
-                    searchable=True,
-                    placeholder='Choose a City...',
-                ),
-            ],
-                style={'width': '25%',
-                       'display': 'inline-block',
-                       'padding-left': '150px',
-                       'padding-top': '20px'}
-            ),
-            # html.Div(
-            #     dcc.Graph(id='all-districts',
-            #               style={'padding': '25px'}),
-            # ),
+            html.H1('Overall statistics',
+                    style={'textAlign': 'center',
+                           'color': '#1f3b4d',
+                           'fontSize': '30px',
+                           'padding-top': '15px'},
+                    ),
             # pie charts two in a row
             html.Div([
                 html.Div([
-                    html.H3('Number of flats / district'),
+                    html.H4('Number of flats / district', style={'textAlign': 'center'}),
                     dcc.Graph(id='pie_flats_per_location',
                               style={'padding': '25px'}),
                 ], className="six columns"),
                 html.Div([
-                    html.H3('Size of flats'),
+                    html.H4('Size of flats', style={'textAlign': 'center'}),
                     dcc.Graph(id='pie_flats_per_area_cat',
                               style={'padding': '25px'}),
                 ], className="six columns"),
@@ -110,12 +96,62 @@ app.layout = html.Div([
             ),
         ]),
         html.Div([
-            html.Label('References:',
+            html.H1('Select a district and area to see average prices per square metre for each month',
+                    style={'textAlign': 'center',
+                           'color': '#1f3b4d',
+                           'fontSize': '30px',
+                           'padding-top': '15px'},
+                    ),
+            html.Div([
+                html.Label('Select a district'),
+                dcc.Dropdown(
+                    id='district-dropdown',
+                    options=districts,
+                    value='Mokotów, Warszawa',
+                    multi=False,
+                    clearable=True,
+                    searchable=True,
+                    placeholder='Choose a City...',
+                ),
+            ],
+                style={'width': '25%',
+                       'display': 'inline-block',
+                       'padding-left': '150px',
+                       'padding-top': '20px'}
+            ),
+            html.Div([
+                html.Label('Select a flat size'),
+                dcc.Dropdown(
+                    id='area-dropdown',
+                    options=flat_sizes,
+                    value='40_50',
+                    multi=False,
+                    clearable=True,
+                    searchable=True,
+                    placeholder='Choose a City...',
+                ),
+            ],
+                style={'width': '25%',
+                       'display': 'inline-block',
+                       'padding-left': '150px',
+                       'padding-top': '20px'}
+            ),
+            html.Div(
+                dcc.Graph(id='district-area-price',
+                          style={'padding': '25px'}),
+            ),
+        ]),
+        html.Div([
+            html.Label('Useful links:',
                        style={'padding': '10px'}
                        ),
-            html.Label('[1] Zillow, 2021, Zillow Home Value Index Data (ZHVI), All Homes, Time Series, Raw Mid Tier:',
+            html.Label(' - JSON data',
                        style={'padding-left': '25px'}),
-            html.A('https://www.zillow.com/research/data/',
+            html.A('https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/main/json_dir/flats.json',
+                   style={'padding-left': '25px'}),
+            html.Label('- code for this thing',
+                       style={'padding-left': '25px'}),
+            html.A('https://github.com/mbalcerzak/warsaw_flats_dashboard',
                    style={'padding-left': '25px'}),
         ],
         ),
@@ -126,35 +162,28 @@ app.layout = html.Div([
 
 
 @app.callback(
-    Output('all-districts', 'figure'),
-    Input('city-dropdown', 'value'))
-def update_figure(selected_city):
+    Output('district-area-price', 'figure'),
+    [Input('district-dropdown', "value"),
+     Input('area-dropdown', "value")])
+def update_figure(location, area):
     data = get_json()
-    dff = data["scraped_per_day"]
+    dff = data["price_m_loc_area_cat"]
+    dff = pd.DataFrame.from_dict(dff)
 
-    dff = pd.DataFrame(dff.items(), columns=['Date', 'Value'])
-    dff = dff.sort_values(by=['Date'])
+    dff = dff.sort_values(by=['month'])
+    dff = dff[dff['location'] == location]
+    dff = dff[dff['area_category'] == area]
+    num_flats = sum(dff['num_flats'])
 
-    fig = px.scatter(dff,
-                     x='Median Home Price ($USD, January 2021)',
-                     y='Median Household Income ($USD)',
-                     size='Population',
-                     size_max=25,
-                     color='Median Home Price ($USD, January 2021)',
-                     color_continuous_scale='jet',
-                     hover_name='City',
-                     hover_data={'Latitude': False, 'Longitude': False,
-                                 'Population': ':,2f', 'Median Household Income ($USD)': ':$,2f',
-                                 'Median Home Price ($USD, January 2021)': ':$,2f'})
+    fig = px.line(dff, x='month', y='avg_price_per_m')
 
-    fig.update_layout(title_text='Median Household Income vs. Median Home Price ($USD) in the United States',
-                      title_font_size=24,
-                      title_xref='container',
-                      title_y=0.95,
-                      title_x=0.5,
-                      showlegend=False,
-                      hovermode='closest',
-                      template='xgridoff')
+    fig.update_layout(template='xgridoff',
+                      yaxis={'title': 'Price per m2'},
+                      xaxis={'title': 'Month'},
+                      title={'text': f'Prices in {location} for flats of size {area} ({num_flats} flats)',
+                             'font': {'size': 24}, 'x': 0.5, 'xanchor': 'center'},
+                      )
+    fig.update_traces(mode="markers+lines")
 
     return fig
 
@@ -162,7 +191,7 @@ def update_figure(selected_city):
 # --- dropdown callback ---
 @app.callback(
     Output('scraped-per-day', 'figure'),
-    Input('city-dropdown', 'value'))
+    Input('area-dropdown', 'value'))
 def update_figure(selected_city):
     data = get_json()
     dff = data["scraped_per_day"]
@@ -186,7 +215,7 @@ def update_figure(selected_city):
 
 @app.callback(
     Output('pie_flats_per_location', 'figure'),
-    Input('city-dropdown', 'value'))
+    Input('area-dropdown', 'value'))
 def update_figure(selected_city):
     data = get_json()
     dff = data["flats_per_location"]
@@ -199,7 +228,7 @@ def update_figure(selected_city):
 
 @app.callback(
     Output('pie_flats_per_area_cat', 'figure'),
-    Input('city-dropdown', 'value'))
+    Input('area-dropdown', 'value'))
 def update_figure(selected_city):
     data = get_json()
     dff = data["flats_per_area_cat"]
