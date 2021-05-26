@@ -199,7 +199,17 @@ def update_figure(selected_city):
     dff = pd.DataFrame(dff.items(), columns=['Date', 'Value'])
     dff = dff.sort_values(by=['Date'])
 
-    fig = px.line(dff, x='Date', y='Value')
+    dff2 = dff[['Date', 'Value']]
+
+    n_days = 7
+    dff2['Value'] = dff2['Value'].rolling(n_days).mean()
+
+    dff['Type'] = 'Actual Values'
+    dff2['Type'] = f'Moving Average ({n_days} days)'
+
+    df = dff.append(dff2, ignore_index=True)
+
+    fig = px.line(df, x='Date', y='Value', color='Type')
 
     fig.update_layout(template='xgridoff',
                       yaxis={'title': 'Number of ads scraped'},
