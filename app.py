@@ -9,8 +9,7 @@ import json
 
 
 def get_json():
-    # link = "https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/main/json_dir/flats.json"
-    link = "https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/moving-average/json_dir/flats.json"
+    link = "https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/main/json_dir/flats.json"
     with request.urlopen(link) as url:
         data = json.loads(url.read().decode())
 
