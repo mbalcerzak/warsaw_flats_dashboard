@@ -9,15 +9,12 @@ import json
 
 
 def get_json():
-    link = "https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/main/json_dir/flats.json"
+    # link = "https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/main/json_dir/flats.json"
+    link = "https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/moving-average/json_dir/flats.json"
     with request.urlopen(link) as url:
         data = json.loads(url.read().decode())
 
     return data
-
-
-def get_data():
-    return pd.read_csv("dataset.csv")
 
 
 def get_list(label: str) -> dict:
@@ -30,9 +27,27 @@ def get_list(label: str) -> dict:
     return options
 
 
+def get_months():
+    months = {
+        1: "January",
+        2: "February",
+        3: "March",
+        4: "April",
+        5: "May",
+        6: "June",
+        7: "July",
+        8: "August",
+        9: "September",
+        10: "October",
+        11: "November",
+        12: "December"
+    }
+
+    return months
+
+
 districts = get_list("flats_per_location")
 flat_sizes = get_list("flats_per_area_cat")
-
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 
@@ -44,7 +59,7 @@ server = app.server
 app.layout = html.Div([
     html.Div([
         html.Div([
-            html.H1('Analysis of Warsaw Flat Prices in 2021',
+            html.H1('Analysis of flat prices in 2021 in Warsaw, Poland',
                     style={'textAlign': 'center',
                            'color': '#FFFFFF',
                            'fontSize': '36px',
@@ -74,38 +89,41 @@ app.layout = html.Div([
                            'fontSize': '30px',
                            'padding-top': '15px'},
                     ),
-            # pie charts two in a row
+            # two pie charts in a row
             html.Div([
                 html.Div([
-                    html.H4('Number of flats / district', style={'textAlign': 'center'}),
+                    html.H4('Number of flats in each district', style={'textAlign': 'center'}),
                     dcc.Graph(id='pie_flats_per_location',
                               style={'padding': '25px'}),
                 ], className="six columns"),
                 html.Div([
-                    html.H4('Size of flats', style={'textAlign': 'center'}),
+                    html.H4('Size of flats (m2)', style={'textAlign': 'center'}),
                     dcc.Graph(id='pie_flats_per_area_cat',
                               style={'padding': '25px'}),
                 ], className="six columns"),
             ], className="row"),
-            # end of pie charts row
             html.Div(
                 dcc.Graph(id='scraped-per-day',
                           style={'padding': '25px'}),
             ),
+            html.Div(
+                dcc.Graph(id='all-districts-prices',
+                          style={'padding': '25px'}),
+            ),
         ]),
         html.Div([
-            html.H1('Select a district and area to see average prices per square metre for each month',
+            html.H1('Select district and flat area to see average prices',
                     style={'textAlign': 'center',
                            'color': '#1f3b4d',
                            'fontSize': '30px',
                            'padding-top': '15px'},
                     ),
             html.Div([
-                html.Label('Select a district'),
+                html.Label('Select district'),
                 dcc.Dropdown(
                     id='district-dropdown',
                     options=districts,
-                    value='Mokotów, Warszawa',
+                    value='Mokotów',
                     multi=False,
                     clearable=True,
                     searchable=True,
@@ -118,7 +136,7 @@ app.layout = html.Div([
                        'padding-top': '20px'}
             ),
             html.Div([
-                html.Label('Select a flat size'),
+                html.Label('Select a flat size (square metres)'),
                 dcc.Dropdown(
                     id='area-dropdown',
                     options=flat_sizes,
@@ -165,18 +183,18 @@ app.layout = html.Div([
      Input('area-dropdown', "value")])
 def update_figure(location, area):
     data = get_json()
+
     dff = data["price_m_loc_area_cat"]
     dff = pd.DataFrame.from_dict(dff)
-
-    dff = dff.sort_values(by=['month'])
     dff = dff[dff['location'] == location]
     dff = dff[dff['area_category'] == area]
     num_flats = sum(dff['num_flats'])
 
+    dff = dff.sort_values(by=['month_num'])
     fig = px.line(dff, x='month', y='avg_price_per_m')
 
     fig.update_layout(template='xgridoff',
-                      yaxis={'title': 'Price per m2'},
+                      yaxis={'title': 'Price per m2 (PLN)'},
                       xaxis={'title': 'Month'},
                       title={'text': f'Prices in {location} for flats of size {area} ({num_flats} flats)',
                              'font': {'size': 24}, 'x': 0.5, 'xanchor': 'center'},
@@ -186,28 +204,46 @@ def update_figure(location, area):
     return fig
 
 
+@app.callback(
+    Output('all-districts-prices', 'figure'),
+    Input('area-dropdown', 'value'))
+def update_figure(area):
+    data = get_json()
+    dff = data["price_m_location"]
+    dff = pd.DataFrame(dff)
+    dff = dff.sort_values(by=['month_num'])
+
+    fig = px.line(dff, x='month', y='avg_price_per_m', color='location')
+
+    fig.update_layout(template='xgridoff',
+                      yaxis={'title': 'Average price per m2 (PLN)'},
+                      xaxis={'title': 'Month'},
+                      title={'text': f'Average prices per m2 for each district',
+                             'font': {'size': 24}, 'x': 0.5, 'xanchor': 'center'}
+                      )
+
+    return fig
+
+
 # --- dropdown callback ---
 @app.callback(
     Output('scraped-per-day', 'figure'),
     Input('area-dropdown', 'value'))
-def update_figure(selected_city):
+def update_figure(area):
     data = get_json()
     dff = data["scraped_per_day"]
     date_first = data["date_first"]
     date_last = data["date_last"]
 
     dff = pd.DataFrame(dff.items(), columns=['Date', 'Value'])
-    dff = dff.sort_values(by=['Date'])
+    dff['Type'] = 'Value'
 
-    dff2 = dff[['Date', 'Value']]
+    dff_ma = data["scraped_per_day_m_avg"]
+    dff_ma = pd.DataFrame(dff_ma.items(), columns=['Date', 'Value'])
+    dff_ma['Type'] = 'Moving Average (7 days)'
 
-    n_days = 7
-    dff2['Value'] = dff2['Value'].rolling(n_days).mean()
-
-    dff['Type'] = 'Actual Values'
-    dff2['Type'] = f'Moving Average ({n_days} days)'
-
-    df = dff.append(dff2, ignore_index=True)
+    df = dff.append(dff_ma, ignore_index=True)
+    df = df.sort_values(by=['Date'])
 
     fig = px.line(df, x='Date', y='Value', color='Type')
 
