@@ -241,7 +241,6 @@ def update_figure(area):
                       title={'text': f'Ads scraped between {date_first} and {date_last}',
                              'font': {'size': 24}, 'x': 0.5, 'xanchor': 'center'}
                       )
-
     return fig
 
 
