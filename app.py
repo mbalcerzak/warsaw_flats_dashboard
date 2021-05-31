@@ -26,25 +26,6 @@ def get_list(label: str) -> dict:
     return options
 
 
-def get_months():
-    months = {
-        1: "January",
-        2: "February",
-        3: "March",
-        4: "April",
-        5: "May",
-        6: "June",
-        7: "July",
-        8: "August",
-        9: "September",
-        10: "October",
-        11: "November",
-        12: "December"
-    }
-
-    return months
-
-
 districts = get_list("flats_per_location")
 flat_sizes = get_list("flats_per_area_cat")
 
@@ -231,10 +212,10 @@ def update_figure(area):
 def update_figure(area):
     data = get_json()
     dff = data["scraped_per_day"]
-    date_first = data["date_first"]
-    date_last = data["date_last"]
-
     dff = pd.DataFrame(dff.items(), columns=['Date', 'Value'])
+    date_first = min(dff['Date'])
+    date_last = max(dff['Date'])
+
     dff['Type'] = 'Value'
 
     dff_ma = data["scraped_per_day_m_avg"]
