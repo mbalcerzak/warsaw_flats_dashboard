@@ -6,6 +6,7 @@ import plotly.express as px
 from dash.dependencies import Output, Input
 import urllib.request as request
 import json
+from datetime import date
 
 
 def get_json():
@@ -25,6 +26,12 @@ def get_list(label: str) -> dict:
 
     return options
 
+
+def today_str():
+    return date.today().strftime("%Y-%m-%d")
+
+
+today = today_str()
 
 districts = get_list("flats_per_location")
 flat_sizes = get_list("flats_per_area_cat")
@@ -213,8 +220,6 @@ def update_figure(area):
     data = get_json()
     dff = data["scraped_per_day"]
     dff = pd.DataFrame(dff.items(), columns=['Date', 'Value'])
-    date_first = min(dff['Date'])
-    date_last = max(dff['Date'])
 
     dff['Type'] = 'Value'
 
@@ -224,6 +229,9 @@ def update_figure(area):
 
     df = dff.append(dff_ma, ignore_index=True)
     df = df.sort_values(by=['Date'])
+    df = df.loc[df['Date'] != today]
+    date_first = min(df['Date'])
+    date_last = max(df['Date'])
 
     fig = px.line(df, x='Date', y='Value', color='Type')
 
