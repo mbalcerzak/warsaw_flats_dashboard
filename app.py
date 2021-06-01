@@ -232,11 +232,11 @@ def update_figure(area):
     df = dff.append(dff_ma, ignore_index=True)
     df = df.sort_values(by=['Date'])
 
-    df = df.loc[df['Date'] != today]
-    date_first = min(df['Date'])
-    date_last = max(df['Date'])
+    df_full = df.loc[df['Date'] != today]
+    date_first = min(df_full['Date'])
+    date_last = max(df_full['Date'])
 
-    fig = px.line(df, x='Date', y='Value', color='Type')
+    fig = px.line(df_full, x='Date', y='Value', color='Type')
 
     fig.update_layout(template='xgridoff',
                       yaxis={'title': 'Number of ads scraped'},
