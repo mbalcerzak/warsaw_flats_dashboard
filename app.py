@@ -10,7 +10,7 @@ from datetime import date
 
 
 def get_json():
-    link = "https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/main/json_dir/flats.json"
+    link = "https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/raspberry-updates/json_dir/flats.json"
     with request.urlopen(link) as url:
         data = json.loads(url.read().decode())
 
@@ -197,7 +197,9 @@ def update_figure(location, area):
 def update_figure(area):
     data = get_json()
     dff = data["price_m_location"]
+
     dff = pd.DataFrame(dff)
+
     dff = dff.sort_values(by=['month_num'])
 
     fig = px.line(dff, x='month', y='avg_price_per_m', color='location')
@@ -229,6 +231,7 @@ def update_figure(area):
 
     df = dff.append(dff_ma, ignore_index=True)
     df = df.sort_values(by=['Date'])
+
     df = df.loc[df['Date'] != today]
     date_first = min(df['Date'])
     date_last = max(df['Date'])
