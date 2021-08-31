@@ -70,7 +70,7 @@ app.layout = html.Div([
                                     'color': '#FFFFFF',
                                     'fontSize': '24px'},
                    ),
-            html.P('''An interactive dashboard displaying housing prices in the districts of Warsaw ''',
+            html.P('''An interactive, real-time dashboard displaying apartment prices in the districts of Warsaw ''',
                    style={'textAlign': 'center',
                           'color': '#FFFFFF',
                           'fontSize': '16px'},
@@ -104,6 +104,10 @@ app.layout = html.Div([
             ], className="row"),
             html.Div(
                 dcc.Graph(id='scraped-per-day',
+                          style={'padding': '25px'}),
+            ),
+            html.Div(
+                dcc.Graph(id='posted-per-day',
                           style={'padding': '25px'}),
             ),
             html.Div(
@@ -175,20 +179,21 @@ app.layout = html.Div([
                           style={'padding': '25px'}),
             ),
         ]),
-        html.Div([
-            html.Label('Useful links:',
-                       style={'padding': '10px'}
-                       ),
-            html.Label(' - JSON data',
-                       style={'padding-left': '25px'}),
-            html.A('https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/main/json_dir/flats.json',
-                   style={'padding-left': '25px'}),
-            html.Label('- code for this thing',
-                       style={'padding-left': '25px'}),
-            html.A('https://github.com/mbalcerzak/warsaw_flats_dashboard',
-                   style={'padding-left': '25px'}),
-        ],
-        ),
+
+        # html.Div([
+        #     html.Label('Useful links:',
+        #                style={'padding': '10px'}
+        #                ),
+        #     html.Label(' - JSON data',
+        #                style={'padding-left': '25px'}),
+        #     html.A('https://raw.githubusercontent.com/mbalcerzak/warsaw_flats_api/main/json_dir/flats.json',
+        #            style={'padding-left': '25px'}),
+        #     html.Label('- code for this thing',
+        #                style={'padding-left': '25px'}),
+        #     html.A('https://github.com/mbalcerzak/warsaw_flats_dashboard',
+        #            style={'padding-left': '25px'}),
+        # ],
+        # ),
     ],
     ),
 ],
@@ -254,7 +259,8 @@ def update_figure(area):
     return fig
 
 
-# --- dropdown callback ---
+# ------------------ SCRAPED BY RASP.PI. PER DAY ---------------------------------------------
+
 @app.callback(
     Output('scraped-per-day', 'figure'),
     Input('area-dropdown', 'value'))
@@ -284,6 +290,39 @@ def update_figure(area):
                       )
     return fig
 
+# ------------------ POSTED PER DAY ---------------------------------------------
+
+@app.callback(
+    Output('posted-per-day', 'figure'),
+    Input('area-dropdown', 'value'))
+def update_figure(area):
+    data = get_json()
+    dff = data["posted_per_day"]
+    dff = pd.DataFrame(dff.items(), columns=['Date', 'Value'])
+
+    dff['Type'] = 'Value'
+
+    dff_ma = data["posted_per_day_m_avg"]
+    dff_ma = pd.DataFrame(dff_ma.items(), columns=['Date', 'Value'])
+    dff_ma['Type'] = 'Moving Average (7 days)'
+
+    df = dff.append(dff_ma, ignore_index=True)
+    df = df.sort_values(by=['Date'])
+
+    df_2021 = df.loc[df['Date'] >= '2021-01-01']
+    df_full = df_2021.loc[df['Date'] != today]
+
+    fig = px.line(df_full, x='Date', y='Value', color='Type')
+
+    fig.update_layout(template='xgridoff',
+                      yaxis={'title': 'Number of ads posted'},
+                      xaxis={'title': 'Date'},
+                      title={'text': f'Ads posted daily',
+                             'font': {'size': 24}, 'x': 0.5, 'xanchor': 'center'}
+                      )
+    return fig
+
+# ------------------ PRICE CHANGES (COUNT) PER DAY ---------------------------------------------
 
 @app.callback(
     Output('price-changes-per-day', 'figure'),
