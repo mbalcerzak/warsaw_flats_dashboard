@@ -70,7 +70,7 @@ app.layout = html.Div([
                                     'color': '#FFFFFF',
                                     'fontSize': '24px'},
                    ),
-            html.P('''An interactive, real-time dashboard displaying apartment prices in the districts of Warsaw ''',
+            html.P('''An interactive dashboard displaying apartment prices in the districts of Warsaw in real-time ''',
                    style={'textAlign': 'center',
                           'color': '#FFFFFF',
                           'fontSize': '16px'},
@@ -309,8 +309,7 @@ def update_figure(area):
     df = dff.append(dff_ma, ignore_index=True)
     df = df.sort_values(by=['Date'])
 
-    df_2021 = df.loc[df['Date'] >= '2021-01-01']
-    df_full = df_2021.loc[df['Date'] != today]
+    df_full = df.loc[df['Date'] != today]
 
     fig = px.line(df_full, x='Date', y='Value', color='Type')
 
