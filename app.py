@@ -59,7 +59,7 @@ server = app.server
 app.layout = html.Div([
     html.Div([
         html.Div([
-            html.H1('Analysis of flat prices in 2021 in Warsaw, Poland',
+            html.H1('Price tracker for apartments in Warsaw, Poland',
                     style={'textAlign': 'center',
                            'color': '#FFFFFF',
                            'fontSize': '36px',
